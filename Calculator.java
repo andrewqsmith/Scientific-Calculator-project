@@ -56,6 +56,20 @@ public class Calculator {
             public void actionPerformed(ActionEvent e) {
                 // Get the source of the action event
                 JButton b = (JButton)e.getSource();
+                
+                // Check for digit buttons and limit input length to 8 digits
+                if ("0123456789".contains(b.getText())) {
+                    if (display.getText().length() < 8) {
+                        // Append the digit to the display
+                        if (performingOperation) {
+                            display.setText("");
+                            performingOperation = false;
+                        }
+                        display.setText(display.getText() + b.getText());
+                    }
+                    return; // Stop further processing for digit buttons
+                }
+
                 if(b.getText().equals("C")) {
                     // If the last entry was an operation, update the display to the value that preceded it
                     // If the last entry was a number, clear the display
@@ -75,18 +89,27 @@ public class Calculator {
                     // Perform the operation if the operator is not null and the display is not empty
                     // If either is true, display "ERROR" in the text field
                     if(operator != null && !display.getText().isEmpty()) {
-                        if(operator.equals("+")) {
-                            int result = first + Integer.parseInt(display.getText());
-                            display.setText(String.valueOf(result));
-                        } else if(operator.equals("-")) {
-                            int result = first - Integer.parseInt(display.getText());
-                            display.setText(String.valueOf(result));
-                        } else if(operator.equals("*")) {
-                            int result = first * Integer.parseInt(display.getText());
-                            display.setText(String.valueOf(result));
-                        } else if(operator.equals("/")) {
-                            int result = first / Integer.parseInt(display.getText());
-                            display.setText(String.valueOf(result));
+                        int result = 0;
+                        try {
+                            if(operator.equals("+")) {
+                                result = first + Integer.parseInt(display.getText());
+                            } else if(operator.equals("-")) {
+                                result = first - Integer.parseInt(display.getText());
+                            } else if(operator.equals("*")) {
+                                result = first * Integer.parseInt(display.getText());
+                            } else if(operator.equals("/")) {
+                                result = first / Integer.parseInt(display.getText());
+                            }
+                            
+                            // Display "ERR" if the result exceeds 8 digits
+                            String resultStr = String.valueOf(result);
+                            if (resultStr.length() > 8) {
+                                display.setText("ERR");
+                            } else {
+                                display.setText(resultStr);
+                            }
+                        } catch (ArithmeticException ex) {
+                            display.setText("ERR");
                         }
                     } else {
                         display.setText("ERROR");
@@ -119,3 +142,4 @@ public class Calculator {
         new Calculator();
     }
 }
+
