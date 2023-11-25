@@ -2,13 +2,14 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.text.DecimalFormat;
 
 public class Calculator {
     // Declare variables for the frame, display, operator, first number, operation status, and last entry
     private JFrame frame;
     private JTextField display;
     private String operator;
-    private int first = 0;
+    private double first = 0;
     private boolean performingOperation = false;
     private String lastEntry = "";
 
@@ -44,9 +45,16 @@ public class Calculator {
         addButton(buttons, "=");
         addButton(buttons, "C");
         addButton(buttons, "AC");
+        // Add '+/-' button for changing sign
+        addButton(buttons, "+/-");
+        addButton(buttons, ".");
 
         frame.pack();
         frame.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        new Calculator();
     }
 
     private void addButton(Container parent, String name) {
@@ -70,67 +78,8 @@ public class Calculator {
                     return; // Stop further processing for digit buttons
                 }
 
-                if(b.getText().equals("C")) {
-                    // If the last entry was an operation, update the display to the value that preceded it
-                    // If the last entry was a number, clear the display
-                    if (lastEntry.equals("+") || lastEntry.equals("-") || lastEntry.equals("*") || lastEntry.equals("/")) {
-                        display.setText(String.valueOf(first));
-                        operator = "";
-                    } else {
-                        display.setText("");
-                    }
-                } else if(b.getText().equals("AC")) {
-                    // Clear all internal work areas and set the display to 0
-                    display.setText("0");
-                    first = 0;
-                    operator = "";
-                    performingOperation = false;
-                } else if(b.getText().equals("=")) {
-                    // Perform the operation if the operator is not null and the display is not empty
-                    // If either is true, display "ERROR" in the text field
-                    if(operator != null && !display.getText().isEmpty()) {
-                        int result = 0;
-                        try {
-                            if(operator.equals("+")) {
-                                result = first + Integer.parseInt(display.getText());
-                            } else if(operator.equals("-")) {
-                                result = first - Integer.parseInt(display.getText());
-                            } else if(operator.equals("*")) {
-                                result = first * Integer.parseInt(display.getText());
-                            } else if(operator.equals("/")) {
-                                result = first / Integer.parseInt(display.getText());
-                            }
-                            
-                            // Display "ERR" if the result exceeds 8 digits
-                            String resultStr = String.valueOf(result);
-                            if (resultStr.length() > 8) {
-                                display.setText("ERR");
-                            } else {
-                                display.setText(resultStr);
-                            }
-                        } catch (ArithmeticException ex) {
-                            display.setText("ERR");
-                        }
-                    } else {
-                        display.setText("ERROR");
-                    }
-                    first = 0;
-                    operator = "";
-                } else if(b.getText().equals("+") || b.getText().equals("-") || b.getText().equals("*") || b.getText().equals("/")) {
-                    // Store the first number and the operation if the display is not empty
-                    if(!display.getText().isEmpty()) {
-                        first = Integer.parseInt(display.getText());
-                        operator = b.getText();
-                        performingOperation = true;
-                    }
-                } else {
-                    // Append the digit to the display
-                    if (performingOperation) {
-                        display.setText("");
-                        performingOperation = false;
-                    }
-                    display.setText(display.getText() + b.getText());
-                }
+                buttonEvaluation(b);
+
                 // Store the last entry
                 lastEntry = b.getText();
             }
@@ -138,8 +87,94 @@ public class Calculator {
         parent.add(button);
     }
 
-    public static void main(String[] args) {
-        new Calculator();
+    private void buttonEvaluation(JButton b){
+
+        if(b.getText().equals("C")) {
+            // If the last entry was an operation, update the display to the value that preceded it
+            // If the last entry was a number, clear the display
+            if (lastEntry.equals("+") || lastEntry.equals("-") || lastEntry.equals("*") || lastEntry.equals("/")) {
+                display.setText(String.valueOf(first));
+                operator = "";
+            } else {
+                display.setText("");
+            }
+        } else if(b.getText().equals("AC")) {
+            // Clear all internal work areas and set the display to 0
+            display.setText("0");
+            first = 0;
+            operator = "";
+            performingOperation = false;
+        } else if(b.getText().equals("=")) {
+            // Perform the operation if the operator is not null and the display is not empty
+            // If either is true, display "ERROR" in the text field
+            if(operator != null && !display.getText().isEmpty()) {
+                double result = 0;
+                try {
+                    result = switch (operator) {
+                        case "+" -> first + Double.parseDouble(display.getText());
+                        case "-" -> first - Double.parseDouble(display.getText());
+                        case "*" -> first * Double.parseDouble(display.getText());
+                        case "/" -> first / Double.parseDouble(display.getText());
+                        default -> result;
+                    };
+
+                    // Format the result to 3 decimal places and removing trailing zeros
+                    String resultStr = getResultStr(result);
+
+                    // Display "ERR" if the result exceeds 8 digits
+                    if (resultStr.length() > 8) {
+                        display.setText("ERR");
+                    } else {
+                        display.setText(resultStr);
+                    }
+                } catch (ArithmeticException ex) {
+                    display.setText("ERR");
+                }
+            } else {
+                display.setText("ERROR");
+            }
+            first = 0;
+            operator = "";
+        } else if(b.getText().equals("+") || b.getText().equals("-") || b.getText().equals("*") || b.getText().equals("/")) {
+            // Store the first number and the operation if the display is not empty
+            if(!display.getText().isEmpty()) {
+                first = Double.parseDouble(display.getText());
+                operator = b.getText();
+                performingOperation = true;
+            }
+        } else if(b.getText().equals("+/-")){
+            // Get the current value displayed in the JTextField
+            double currentValue = Double.parseDouble(display.getText());
+            // Multiply the current value by -1 to change its sign
+            double newValue = currentValue * -1;
+            // Set the JTextField text to the new value
+            display.setText(String.valueOf(newValue));
+        } else if(b.getText().equals(".")){
+            if (!display.getText().contains(".")) {
+                display.setText(display.getText() + ".");
+            }
+        } else {
+            // Append the digit to the display
+            if (performingOperation) {
+                display.setText("");
+                performingOperation = false;
+            }
+            display.setText(display.getText() + b.getText());
+        }
+
+    }
+
+    private static String getResultStr(double result) {
+        String resultStr;
+        if (result == Math.floor(result)) {
+            // If the result is a whole number, display it as an integer
+            resultStr = String.format("%.0f", result);
+        } else {
+            // If the result is not a whole number, display it with up to 3 decimal places and remove trailing zeros
+            DecimalFormat df = new DecimalFormat("#.###");
+            resultStr = df.format(result);
+        }
+        return resultStr;
     }
 }
 
